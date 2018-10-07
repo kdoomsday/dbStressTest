@@ -1,0 +1,6 @@
+*.class
+*target/
+
+.ensime*
+
+.sbt-hydra-history
