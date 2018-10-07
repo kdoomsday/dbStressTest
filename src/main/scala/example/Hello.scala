@@ -10,7 +10,7 @@ import org.http4s.server.blaze._
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.UUID
 import scala.math.BigDecimal
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Random, Success, Try }
 
 object Hello extends StreamApp[IO] {
   val testService = HttpService[IO] {
@@ -26,7 +26,9 @@ object Hello extends StreamApp[IO] {
       }
 
     case GET -> Root / "insertRandom" =>
-      insert(Record(UUID.randomUUID(), BigDecimal("42.0")), dao)
+      val (full, dec) = (Random.nextInt(100), Random.nextInt(100))
+      val num = BigDecimal(s"$full.$dec")
+      insert(Record(UUID.randomUUID(), num), dao)
   }
 
   /** Parse strings into a Record */
@@ -41,6 +43,14 @@ object Hello extends StreamApp[IO] {
     dao.insert(record).flatMap(i => Response(Status.Ok).withBody(i.toString()))
 
 
+  def queryService(dao: Dao) = HttpService[IO] {
+    case GET -> Root / "query" / IntVar(n) / BooleanVar(ascending) =>
+      dao.query(n, ascending).flatMap(rs => Response(Status.Ok).withBody(rs.mkString("\n")))
+  }
+
+  /** Application main.
+    * Adding "postgresql" as a param makes it choose postgresql for the database
+    */
   override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
     val dao =
       if (args contains "postgresql") {
@@ -56,7 +66,16 @@ object Hello extends StreamApp[IO] {
       .bindHttp(8080, "0.0.0.0")
       .mountService(testService, "/")
       .mountService(insertService(dao), "/")
+      .mountService(queryService(dao), "/")
       .serve
   }
 
+}
+
+object BooleanVar {
+  def unapply(str: String): Option[Boolean] =
+    if (!str.isEmpty())
+      Try { java.lang.Boolean.valueOf(str).booleanValue() }.toOption
+    else
+      None
 }
