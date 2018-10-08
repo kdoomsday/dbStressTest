@@ -43,3 +43,9 @@ lazy val testDeps = Seq(
   "org.specs2"  %% "specs2-core" % Specs2Version % "test",
   "com.lihaoyi" %% "utest"       % "0.6.5"       % "test"
 )
+
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
+}
