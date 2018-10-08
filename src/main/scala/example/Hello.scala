@@ -46,7 +46,23 @@ object Hello extends StreamApp[IO] {
       val inserted = insIntoRandom(dao, description)
       inserted flatMap { i => if (i > 0) Ok(s"insertados $i registros")
                               else BadRequest(s"No ee consiguió record") }
-}
+  }
+
+
+  def queryService(dao: Dao) = HttpService[IO] {
+    case GET -> Root / "query" / IntVar(n) / BooleanVar(ascending) =>
+      dao.query(n, ascending).flatMap(rs => Response(Status.Ok).withBody(rs.mkString("\n")))
+
+    case GET -> Root / "recordInfos" / guidString =>
+      Try { UUID.fromString(guidString) } match {
+        case Success(uuid) =>
+          dao.recordInfos(uuid).map(_.mkString("\n"))
+                               .map(s => s"[$s]")
+                               .flatMap (content => Response(Status.Ok).withBody(content))
+        case Failure(e) =>
+          BadRequest(s"Invalid uuid: $guidString")
+      }
+  }
 
   /* ***** Fin services ***** */
 
@@ -71,10 +87,6 @@ object Hello extends StreamApp[IO] {
     dao.insert(record).flatMap(i => Response(Status.Ok).withBody(i.toString()))
 
 
-  def queryService(dao: Dao) = HttpService[IO] {
-    case GET -> Root / "query" / IntVar(n) / BooleanVar(ascending) =>
-      dao.query(n, ascending).flatMap(rs => Response(Status.Ok).withBody(rs.mkString("\n")))
-  }
 
   /** Application main.
     * Adding "postgresql" as a param makes it choose postgresql for the database

@@ -24,6 +24,11 @@ trait Dao {
 
   /** Un record aleatorio, si hay */
   def randomRecord(): IO[Option[Record]]
+
+  /** Todos los recordInfo de un record, por ID.
+    * Si no existe el record la lista viene vac&iacute;a
+    */
+  def recordInfos(guid: UUID): IO[List[RecordInfo]]
 }
 
 /** Implementación que trabaja contra una BD */
@@ -59,5 +64,14 @@ class DbDao(val transactor: IO[Transactor[IO]]) extends Dao {
   override def randomRecord() =
     transactor.flatMap { xa =>
       sql"Select guid, price from record order by random() limit 1".query[Record].option.transact(xa)
+    }
+
+  override def recordInfos(guid: UUID): IO[List[RecordInfo]] =
+    transactor.flatMap { xa =>
+      sql"""Select id, guid, creation_date, description
+            from record_info
+            where guid=$guid""".query[RecordInfo]
+        .to[List]
+        .transact(xa)
     }
 }
