@@ -1,6 +1,7 @@
 package example
 
 import cats.effect.IO
+import cats.implicits._
 import com.example.{ Dao, Record }
 import fs2.{ Stream, StreamApp }
 import fs2.StreamApp.ExitCode
@@ -29,6 +30,33 @@ object Hello extends StreamApp[IO] {
       val (full, dec) = (Random.nextInt(100), Random.nextInt(100))
       val num = BigDecimal(s"$full.$dec")
       insert(Record(UUID.randomUUID(), num), dao)
+
+    case GET -> Root / "insertRI" / stringGuid / description =>
+      Try { UUID.fromString(stringGuid) } match {
+        case Success(uuid) =>
+          dao.insertRI(uuid, description)
+            .map(_.toString)
+            .recoverWith{ case t => IO.pure(t.getMessage)}
+            .flatMap[Response[IO]](text => Response(Status.Ok).withBody(text))
+
+        case Failure(e)    => Response(Status.BadRequest).withBody(e.getMessage)
+      }
+
+    case GET -> Root / "insertIntoRRecord" / description =>
+      val inserted = insIntoRandom(dao, description)
+      inserted flatMap { i => if (i > 0) Ok(s"insertados $i registros")
+                              else BadRequest(s"No ee consiguió record") }
+}
+
+  /* ***** Fin services ***** */
+
+  private[this] def insIntoRandom(dao: Dao, description: String): IO[Int] = {
+    dao.randomRecord()
+      .flatMap { oRec =>
+        oRec.map { record =>
+          dao.insertRI(record.guid, description)
+        }.getOrElse(IO.pure(0))
+      }
   }
 
   /** Parse strings into a Record */
