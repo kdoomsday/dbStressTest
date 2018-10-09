@@ -5,6 +5,7 @@ import cats.implicits._
 import com.example.{ Dao, Record }
 import fs2.{ Stream, StreamApp }
 import fs2.StreamApp.ExitCode
+import java.sql.Timestamp
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.server.blaze._
@@ -64,7 +65,15 @@ object Hello extends StreamApp[IO] {
       }
   }
 
+  def updateService(dao: Dao) = HttpService[IO] {
+    case GET -> Root / "updateOlds" =>
+      dao.markOldInfos(oldDate()) flatMap (i => Response(Status.Ok).withBody(s"Actualizados $i registros"))
+  }
+
   /* ***** Fin services ***** */
+
+  private[this] def oldDate(): Timestamp =
+    Timestamp.valueOf(java.time.LocalDateTime.now().minusMinutes(5))
 
   private[this] def insIntoRandom(dao: Dao, description: String): IO[Int] = {
     dao.randomRecord()
@@ -107,6 +116,7 @@ object Hello extends StreamApp[IO] {
       .mountService(testService, "/")
       .mountService(insertService(dao), "/")
       .mountService(queryService(dao), "/")
+      .mountService(updateService(dao), "/")
       .serve
   }
 

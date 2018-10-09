@@ -41,11 +41,6 @@ object DaoBuilder {
         throw new Exception(s"No db @ [${url.getOrElse("")}]")
       }
     }
-
-    // val xa = Transactor.fromDriverManager[IO](
-    //   "org.postgresql.Driver", "jdbc:postgresql:postgres", "postql", "postql"
-    // )
-    // IO.pure(xa)
   }
 
   @inline

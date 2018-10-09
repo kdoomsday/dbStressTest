@@ -4,6 +4,7 @@ import cats.effect.IO
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
+import java.sql.Timestamp
 import java.util.UUID
 
 trait Dao {
@@ -29,6 +30,9 @@ trait Dao {
     * Si no existe el record la lista viene vac&iacute;a
     */
   def recordInfos(guid: UUID): IO[List[RecordInfo]]
+
+  /** Marcar los recordInfos viejos. Devuelve cuantos fueron actualizados */
+  def markOldInfos(date: Timestamp): IO[Int]
 }
 
 /** Implementación que trabaja contra una BD */
@@ -72,6 +76,14 @@ class DbDao(val transactor: IO[Transactor[IO]]) extends Dao {
             from record_info
             where guid=$guid""".query[RecordInfo]
         .to[List]
+        .transact(xa)
+    }
+
+  override def markOldInfos(date: Timestamp): IO[Int] =
+    transactor.flatMap { xa =>
+      sql"""Update record_info set description = (description || ' OLD')
+            where creation_date < $date and description not like '% OLD'""".update
+        .run
         .transact(xa)
     }
 }
