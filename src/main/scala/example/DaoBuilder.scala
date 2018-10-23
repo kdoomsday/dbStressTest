@@ -1,28 +1,29 @@
 package example
 
-import cats.effect.IO
+import cats.effect.{ ContextShift, IO }
 import com.example.{ Dao, DbDao }
 import com.zaxxer.hikari.HikariDataSource
 import doobie.util.transactor.Transactor
 import com.example.Props
+import scala.concurrent.ExecutionContext
 
 
 object DaoBuilder {
   /** Dao que trabaja con una db SQLite */
-  def sqliteDao():   Dao = mkDao(sqliteTrans()  )
-  def postgresDao(): Dao = mkDao(postgresTrans())
+  def sqliteDao()(implicit cs: ContextShift[IO], connectEC: ExecutionContext, transactEC: ExecutionContext):   Dao = mkDao(sqliteTrans()(cs, connectEC, transactEC)  )
+  def postgresDao()(implicit cs: ContextShift[IO], connectEC: ExecutionContext, transactEC: ExecutionContext): Dao = mkDao(postgresTrans()(cs, connectEC, transactEC))
 
-  private[this] def sqliteTrans(): IO[Transactor[IO]] = {
+  def sqliteTrans()(implicit cs: ContextShift[IO], connectEC: ExecutionContext, transactEC: ExecutionContext): IO[Transactor[IO]] = {
     val hds = new HikariDataSource()
     val url = propsSqlite.string("url").getOrElse[String](throw new Exception("No db"))
     println(s"Using: $url")
 
     hds.setJdbcUrl(url)
-    val transactor = Transactor.fromDataSource[IO](hds)
+    val transactor = Transactor.fromDataSource[IO](hds, connectEC=connectEC, transactEC=transactEC)
     IO.pure(transactor)
   }
 
-  def postgresTrans(): IO[Transactor[IO]] = {
+  def postgresTrans()(implicit cs: ContextShift[IO], connectEC: ExecutionContext, transactEC: ExecutionContext): IO[Transactor[IO]] = {
     val driver = propsPostgres.string("driver")
     val url = propsPostgres.string("url")
     val user = propsPostgres.string("username")

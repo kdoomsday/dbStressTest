@@ -1,9 +1,9 @@
 package com.example
 
-import doobie.util.meta.Meta
+import doobie.util.Meta
 import java.util.UUID
 
 object DaoMeta {
   implicit val UUIDMeta: Meta[UUID] =
-    Meta[String].xmap(UUID.fromString _, _.toString())
+    Meta[String].imap(UUID.fromString _)(_.toString())
 }

@@ -1,26 +1,26 @@
 package example
 
-import cats.effect.IO
+import cats.effect.{ ExitCode, IO, IOApp }
 import cats.implicits._
 import com.example.{ Dao, Record }
-import fs2.{ Stream, StreamApp }
-import fs2.StreamApp.ExitCode
+import fs2.Stream
 import java.sql.Timestamp
 import org.http4s._
 import org.http4s.dsl.io._
+import org.http4s.server.Router
 import org.http4s.server.blaze._
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.UUID
 import scala.math.BigDecimal
 import scala.util.{ Failure, Random, Success, Try }
 
-object Hello extends StreamApp[IO] {
-  val testService = HttpService[IO] {
+object Hello extends IOApp {
+  val testService = HttpRoutes.of[IO] {
     case GET -> Root / "test" =>
       Ok("echo: " + System.currentTimeMillis())
   }
 
-  def insertService(dao: Dao) = HttpService[IO] {
+  def insertService(dao: Dao) = HttpRoutes.of[IO] {
     case GET -> Root / "insert" / stringGuid / stringPrice =>
       getRecord(stringGuid, stringPrice) map (r => insert(r, dao)) match {
         case Success(a) => a
@@ -50,7 +50,7 @@ object Hello extends StreamApp[IO] {
   }
 
 
-  def queryService(dao: Dao) = HttpService[IO] {
+  def queryService(dao: Dao) = HttpRoutes.of[IO] {
     case GET -> Root / "query" / IntVar(n) / BooleanVar(ascending) =>
       dao.query(n, ascending).flatMap(rs => Response(Status.Ok).withBody(rs.mkString("\n")))
 
@@ -65,7 +65,7 @@ object Hello extends StreamApp[IO] {
       }
   }
 
-  def updateService(dao: Dao) = HttpService[IO] {
+  def updateService(dao: Dao) = HttpRoutes.of[IO] {
     case GET -> Root / "updateOlds" =>
       dao.markOldInfos(oldDate()) flatMap (i => Response(Status.Ok).withBody(s"Actualizados $i registros"))
   }
@@ -100,7 +100,7 @@ object Hello extends StreamApp[IO] {
   /** Application main.
     * Adding "postgresql" as a param makes it choose postgresql for the database
     */
-  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
+  override def run(args: List[String]): IO[ExitCode] = {
     val dao =
       if (args contains "postgresql") {
         println("Choosing postgresql")
@@ -111,13 +111,20 @@ object Hello extends StreamApp[IO] {
         DaoBuilder.sqliteDao()
       }
 
-    BlazeBuilder[IO]
+    val httpApp = Router(
+      "/" -> testService,
+      "/" -> insertService(dao),
+      "/" -> queryService(dao),
+      "/" -> updateService(dao)
+    ).orNotFound
+
+    BlazeServerBuilder[IO]
       .bindHttp(8080, "0.0.0.0")
-      .mountService(testService, "/")
-      .mountService(insertService(dao), "/")
-      .mountService(queryService(dao), "/")
-      .mountService(updateService(dao), "/")
+      .withHttpApp(httpApp)
       .serve
+      .compile
+      .drain
+      .as(ExitCode.Success)
   }
 
 }

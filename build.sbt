@@ -11,13 +11,23 @@ lazy val root = (project in file(".")).
     libraryDependencies ++= doobieDeps,
     libraryDependencies ++= monixDeps,
     libraryDependencies ++= http4sDeps,
+    libraryDependencies ++= fs2Deps,
     libraryDependencies ++= testDeps,
 
     scalacOptions += "-Ypartial-unification",
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4")
   )
 
-lazy val doobieVersion = "0.5.3"
+// Versiones para los paquetes
+// val Http4sVersion  = "0.18.20"
+val Http4sVersion  = "0.19.0"
+val Specs2Version  = "4.1.0"
+val LogbackVersion = "1.2.3"
+val Fs2Version     = "1.0.0"
+val MonixVersion   = "3.0.0-RC1"
+lazy val doobieVersion = "0.6.0"
+// lazy val doobieVersion = "0.5.3"
+
 lazy val doobieDeps = Seq(
   "org.tpolecat" %% "doobie-core"   % doobieVersion,
   "org.tpolecat" %% "doobie-hikari" % doobieVersion,
@@ -26,14 +36,12 @@ lazy val doobieDeps = Seq(
   "org.postgresql" % "postgresql"  % "9.4-1200-jdbc41"
 )
 
-lazy val monixVersion = "3.0.0-RC1"
+
+// Listas de dependencias
 lazy val monixDeps = Seq(
-  "io.monix" %% "monix" % monixVersion
+  "io.monix" %% "monix" % MonixVersion
 )
 
-val Http4sVersion = "0.18.19"
-val Specs2Version = "4.1.0"
-val LogbackVersion = "1.2.3"
 lazy val http4sDeps = Seq(
   "org.http4s"      %% "http4s-blaze-server" % Http4sVersion,
   "org.http4s"      %% "http4s-circe"        % Http4sVersion,
@@ -46,7 +54,12 @@ lazy val testDeps = Seq(
   "com.lihaoyi" %% "utest"       % "0.6.5"       % "test"
 )
 
+lazy val fs2Deps = Seq(
+  "co.fs2" %% "fs2-core" % Fs2Version
+)
 
+
+// Resolver problemas generando el jar
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x => MergeStrategy.first
