@@ -9,10 +9,13 @@ import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
+import org.http4s.circe._
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.UUID
 import scala.math.BigDecimal
 import scala.util.{ Failure, Random, Success, Try }
+import io.circe.syntax._
+import io.circe.generic.auto._
 
 object Hello extends IOApp {
   val testService = HttpRoutes.of[IO] {
@@ -38,7 +41,7 @@ object Hello extends IOApp {
           dao.insertRI(uuid, description)
             .map(_.toString)
             .recoverWith{ case t => IO.pure(t.getMessage)}
-            .flatMap[Response[IO]](text => Response(Status.Ok).withBody(text))
+            .flatMap[Response[IO]](text => Ok(text))
 
         case Failure(e)    => Response(Status.BadRequest).withBody(e.getMessage)
       }
@@ -52,14 +55,15 @@ object Hello extends IOApp {
 
   def queryService(dao: Dao) = HttpRoutes.of[IO] {
     case GET -> Root / "query" / IntVar(n) / BooleanVar(ascending) =>
-      dao.query(n, ascending).flatMap(rs => Response(Status.Ok).withBody(rs.mkString("\n")))
+      // dao.query(n, ascending).flatMap(rs => Ok(rs.asJson))
+      dao.query(n, ascending).flatMap(rs => Ok(rs.asJson))
 
     case GET -> Root / "recordInfos" / guidString =>
       Try { UUID.fromString(guidString) } match {
         case Success(uuid) =>
           dao.recordInfos(uuid).map(_.mkString("\n"))
                                .map(s => s"[$s]")
-                               .flatMap (content => Response(Status.Ok).withBody(content))
+                               .flatMap (content => Ok(content))
         case Failure(e) =>
           BadRequest(s"Invalid uuid: $guidString")
       }
@@ -67,7 +71,7 @@ object Hello extends IOApp {
 
   def updateService(dao: Dao) = HttpRoutes.of[IO] {
     case GET -> Root / "updateOlds" =>
-      dao.markOldInfos(oldDate()) flatMap (i => Response(Status.Ok).withBody(s"Actualizados $i registros"))
+      dao.markOldInfos(oldDate()) flatMap (i => Ok(s"Actualizados $i registros"))
   }
 
   /* ***** Fin services ***** */
@@ -93,7 +97,7 @@ object Hello extends IOApp {
 
   /** Insert a record and build the response */
   private[this] def insert(record: Record, dao: Dao): IO[Response[IO]] =
-    dao.insert(record).flatMap(i => Response(Status.Ok).withBody(i.toString()))
+    dao.insert(record).flatMap(i => Ok(i.toString()))
 
 
 

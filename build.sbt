@@ -13,6 +13,7 @@ lazy val root = (project in file(".")).
     libraryDependencies ++= http4sDeps,
     libraryDependencies ++= fs2Deps,
     libraryDependencies ++= testDeps,
+    libraryDependencies ++= circeDeps,
 
     scalacOptions += "-Ypartial-unification",
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4")
@@ -25,8 +26,8 @@ val Specs2Version  = "4.1.0"
 val LogbackVersion = "1.2.3"
 val Fs2Version     = "1.0.0"
 val MonixVersion   = "3.0.0-RC1"
-lazy val doobieVersion = "0.6.0"
-// lazy val doobieVersion = "0.5.3"
+val doobieVersion  = "0.6.0"
+val circeVersion   = "0.10.0"
 
 lazy val doobieDeps = Seq(
   "org.tpolecat" %% "doobie-core"   % doobieVersion,
@@ -58,6 +59,10 @@ lazy val fs2Deps = Seq(
   "co.fs2" %% "fs2-core" % Fs2Version
 )
 
+lazy val circeDeps = Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic"
+).map(_ % circeVersion)
 
 // Resolver problemas generando el jar
 assemblyMergeStrategy in assembly := {
