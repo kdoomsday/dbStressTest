@@ -1,9 +1,12 @@
 package example
 
+import cats.Monad
 import cats.effect.{ ExitCode, IO, IOApp }
 import cats.implicits._
 import com.example.{ Dao, Record }
+import ebarrientos.stream.{ DaoS, DbDaoS }
 import fs2.Stream
+import io.circe.Encoder
 import java.sql.Timestamp
 import org.http4s._
 import org.http4s.dsl.io._
@@ -16,14 +19,20 @@ import scala.math.BigDecimal
 import scala.util.{ Failure, Random, Success, Try }
 import io.circe.syntax._
 import io.circe.generic.auto._
+import io.circe.fs2.stringArrayParser
+import io.circe.fs2.stringStreamParser
 
 object Hello extends IOApp {
+  import example.JsonEncoders._
+
+  // Servicio de prueba. Echo con el timestamp
   val testService = HttpRoutes.of[IO] {
     case GET -> Root / "test" =>
       Ok("echo: " + System.currentTimeMillis())
   }
 
-  def insertService(dao: Dao) = HttpRoutes.of[IO] {
+  // Servicios que insertan valores en la bd
+  def insertService(dao: DaoS[IO]) = HttpRoutes.of[IO] {
     case GET -> Root / "insert" / stringGuid / stringPrice =>
       getRecord(stringGuid, stringPrice) map (r => insert(r, dao)) match {
         case Success(a) => a
@@ -52,24 +61,24 @@ object Hello extends IOApp {
                               else BadRequest(s"No ee consiguió record") }
   }
 
-
-  def queryService(dao: Dao) = HttpRoutes.of[IO] {
+  // Servicios que consultan informacion
+  def queryService(dao: DaoS[IO]) = HttpRoutes.of[IO] {
     case GET -> Root / "query" / IntVar(n) / BooleanVar(ascending) =>
-      // dao.query(n, ascending).flatMap(rs => Ok(rs.asJson))
-      dao.query(n, ascending).flatMap(rs => Ok(rs.asJson))
+      Ok( dao.query(n, ascending)
+           .fold(Nil: List[Record])((l, r) => r::l)
+           .map(_.asJson) )
 
     case GET -> Root / "recordInfos" / guidString =>
       Try { UUID.fromString(guidString) } match {
         case Success(uuid) =>
-          dao.recordInfos(uuid).map(_.mkString("\n"))
-                               .map(s => s"[$s]")
-                               .flatMap (content => Ok(content))
+          Ok(dao.recordInfos(uuid).map(_.asJson))
         case Failure(e) =>
           BadRequest(s"Invalid uuid: $guidString")
       }
   }
 
-  def updateService(dao: Dao) = HttpRoutes.of[IO] {
+  // Servicios que actualizan informacion
+  def updateService(dao: DaoS[IO]) = HttpRoutes.of[IO] {
     case GET -> Root / "updateOlds" =>
       dao.markOldInfos(oldDate()) flatMap (i => Ok(s"Actualizados $i registros"))
   }
@@ -79,7 +88,7 @@ object Hello extends IOApp {
   private[this] def oldDate(): Timestamp =
     Timestamp.valueOf(java.time.LocalDateTime.now().minusMinutes(5))
 
-  private[this] def insIntoRandom(dao: Dao, description: String): IO[Int] = {
+  private[this] def insIntoRandom(dao: DaoS[IO], description: String): IO[Int] = {
     dao.randomRecord()
       .flatMap { oRec =>
         oRec.map { record =>
@@ -96,9 +105,13 @@ object Hello extends IOApp {
   }
 
   /** Insert a record and build the response */
-  private[this] def insert(record: Record, dao: Dao): IO[Response[IO]] =
+  private[this] def insert(record: Record, dao: DaoS[IO]): IO[Response[IO]] =
     dao.insert(record).flatMap(i => Ok(i.toString()))
 
+
+
+  def getPostgresDaoS(): DaoS[IO] = DbDaoS[IO](DaoBuilder.postgresTrans())
+  def getSqliteDaoS  (): DaoS[IO] = DbDaoS[IO](DaoBuilder.sqliteTrans())
 
 
   /** Application main.
@@ -108,11 +121,13 @@ object Hello extends IOApp {
     val dao =
       if (args contains "postgresql") {
         println("Choosing postgresql")
-        DaoBuilder.postgresDao()
+        // DaoBuilder.postgresDao()
+        getPostgresDaoS()
       }
       else {
         println("Choosing sqlite")
-        DaoBuilder.sqliteDao()
+        // DaoBuilder.sqliteDao()
+        getSqliteDaoS()
       }
 
     val httpApp = Router(

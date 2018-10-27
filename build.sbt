@@ -61,7 +61,8 @@ lazy val fs2Deps = Seq(
 
 lazy val circeDeps = Seq(
   "io.circe" %% "circe-core",
-  "io.circe" %% "circe-generic"
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-fs2"
 ).map(_ % circeVersion)
 
 // Resolver problemas generando el jar
