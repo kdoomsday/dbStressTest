@@ -1,6 +1,6 @@
-package ebarrientos.stream
+package com.ebarrientos.dao.stream
 
-import com.example.{ Record, RecordInfo }
+import com.ebarrientos.{ Record, RecordInfo }
 
 import cats.effect.IO
 import fs2.Stream

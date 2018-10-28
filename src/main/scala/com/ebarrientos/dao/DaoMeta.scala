@@ -1,4 +1,4 @@
-package com.example
+package com.ebarrientos.dao
 
 import doobie.util.Meta
 import java.util.UUID

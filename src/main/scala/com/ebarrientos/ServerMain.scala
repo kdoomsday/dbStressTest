@@ -1,10 +1,11 @@
-package example
+package com.ebarrientos
 
 import cats.Monad
 import cats.effect.{ ExitCode, IO, IOApp }
 import cats.implicits._
-import com.example.{ Dao, Record }
-import ebarrientos.stream.{ DaoS, DbDaoS }
+import com.ebarrientos.Record
+import com.ebarrientos.dao.{ Dao, DaoBuilder }
+import com.ebarrientos.dao.stream.{ DaoS, DbDaoS }
 import fs2.Stream
 import io.circe.Encoder
 import java.sql.Timestamp
@@ -22,8 +23,8 @@ import io.circe.generic.auto._
 import io.circe.fs2.stringArrayParser
 import io.circe.fs2.stringStreamParser
 
-object Hello extends IOApp {
-  import example.JsonEncoders._
+object ServerMain extends IOApp {
+  import com.ebarrientos.json.JsonEncoders._
 
   // Servicio de prueba. Echo con el timestamp
   val testService = HttpRoutes.of[IO] {

@@ -1,4 +1,4 @@
-package com.example
+package com.ebarrientos
 
 import scala.util.Try
 import java.util.Properties

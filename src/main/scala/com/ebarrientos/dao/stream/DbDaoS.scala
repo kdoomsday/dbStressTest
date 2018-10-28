@@ -1,15 +1,15 @@
-package ebarrientos.stream
+package com.ebarrientos.dao.stream
 
 import cats.Monad
 import cats.effect.IO
-import com.example.{ Record, RecordInfo }
+import com.ebarrientos.{ Record, RecordInfo }
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import fs2.Stream
 import java.sql.Timestamp
 import java.util.UUID
-import com.example.DaoMeta._
+import com.ebarrientos.dao.DaoMeta._
 
 /** Implementación de DaoS usando Doobie */
 class DbDaoS[F[_] : Monad] (transactor: Transactor[F]) extends DaoS[F] {

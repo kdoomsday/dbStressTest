@@ -1,4 +1,4 @@
-package example
+package com.ebarrientos.json
 
 import io.circe.Encoder
 import java.util.UUID

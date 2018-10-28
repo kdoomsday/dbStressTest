@@ -1,4 +1,4 @@
-package com.example
+package com.ebarrientos.dao
 
 import cats.effect.IO
 import doobie._
@@ -6,11 +6,12 @@ import doobie.implicits._
 import doobie.util.transactor.Transactor
 import java.sql.Timestamp
 import java.util.UUID
+import com.ebarrientos.{ Record, RecordInfo }
 
 /** Implementación que trabaja contra una BD */
 class DbDao(val transactor: IO[Transactor[IO]]) extends Dao {
   import doobie.imports._
-  import com.example.DaoMeta._
+  import com.ebarrientos.dao.DaoMeta._
 
   def qInsert(guid: String, price: BigDecimal): Update0 =
     sql"""Insert into Record(guid, price) Values($guid, $price)""".update

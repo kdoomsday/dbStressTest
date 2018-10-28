@@ -1,4 +1,4 @@
-package com.example
+package com.ebarrientos
 
 import java.util.UUID
 import java.sql.Timestamp

@@ -1,10 +1,9 @@
-package example
+package com.ebarrientos.dao
 
 import cats.effect.{ ContextShift, IO }
-import com.example.{ Dao, DbDao }
 import com.zaxxer.hikari.HikariDataSource
 import doobie.util.transactor.Transactor
-import com.example.Props
+import com.ebarrientos.Props
 import scala.concurrent.ExecutionContext
 
 

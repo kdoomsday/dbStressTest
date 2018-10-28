@@ -1,4 +1,4 @@
-package com.example
+package com.ebarrientos.dao
 
 import cats.effect.IO
 import doobie._
@@ -6,6 +6,7 @@ import doobie.implicits._
 import doobie.util.transactor.Transactor
 import java.sql.Timestamp
 import java.util.UUID
+import com.ebarrientos.{ Record, RecordInfo }
 
 trait Dao {
   /** Insertar un Record. Devuelve el número de elementos insertados (1) */
