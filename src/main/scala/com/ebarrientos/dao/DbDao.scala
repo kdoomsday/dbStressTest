@@ -60,3 +60,7 @@ class DbDao(val transactor: IO[Transactor[IO]]) extends Dao {
         .transact(xa)
     }
 }
+
+object DbDao {
+  def apply(transactor: Transactor[IO]): DbDao = new DbDao(IO.pure(transactor))
+}
