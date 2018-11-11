@@ -4,3 +4,5 @@
 .ensime*
 
 .sbt-hydra-history
+
+*.org_archive

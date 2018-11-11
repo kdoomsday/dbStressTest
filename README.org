@@ -3,6 +3,6 @@ A small testcase for testing database performance.
 Implements a few /endpoints/ for inserting, querying and updating Records so that
 stress testing applications may be used.
 * Roadmap
-** Test with the DaoS interface
-   This streams results, instead of converting to lists. Problem: must convert
-the stream into some kind of Json. See [[https://http4s.org/v0.19/streaming/][http4s streaming]] for reference.
+** Benchmarking
+   Would like to measure DaoS (stream time) vs Dao (regular time).
+   It is entirely possible that I am using streams wrong, though.
